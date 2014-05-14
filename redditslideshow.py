@@ -1,30 +1,57 @@
 import praw
 import argparse
+from urllib.request import urlopen
 
-#grabs submissions from subreddits
+#grabs submissions from subreddits and returns list of urls
 def getSubmissions(sub, number, list):
+	urls = []
 	for sub in subs:
 		sub["submissions"] = []
 
 		if list == "hot":
 			for submission in sub["sub"].get_hot(limit=args.number):
 				sub["submissions"].append(submission)
+				if submission.url is not None:
+					urls.append(submission.url)
 
 		elif list == "new":
 			for submission in sub["sub"].get_new(limit=args.number):
 				sub["submissions"].append(submission)
+				if submission.url is not None:
+					urls.append(submission.url)
 
 		elif list == "rising":
 			for submission in sub["sub"].get_rising(limit=args.number):
 				sub["submissions"].append(submission)
+				if submission.url is not None:
+					urls.append(submission.url)
 
 		elif list == "controversial":
 			for submission in sub["sub"].get_controversial(limit=args.number):
 				sub["submissions"].append(submission)
+				if submission.url is not None:
+					urls.append(submission.url)
 
 		elif list == "top":
 			for submission in sub["sub"].get_top(limit=args.number):
 				sub["submissions"].append(submission)
+				if submission.url is not None:
+					urls.append(submission.url)
+	return urls
+
+#tries to remove non images, and add file extensions to dumb imgur posts
+def cleanURLs(urls):
+	for url in urls:
+		if "imgur.com" in url and url[-4] != ".":
+			urls.remove(url)
+			url = url + ".png"
+			urls.append(url)
+		elif ".htm" in url or url[-1] == "/" or "reddit.com" in url or url[-4] != ".":
+			urls.remove(url)
+			continue
+		
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", help="The file containing a list of subreddits, one per line, to read in from.")
@@ -50,13 +77,21 @@ for line in subsFile:
 		subs.append({"name": line, "sub": reddit.get_subreddit(line)})
 subsFile.close()
 
-getSubmissions(subs, args.number, args.list)
+urls = getSubmissions(subs, args.number, args.list)
+cleanURLs(urls)
 
+# for url in urls:
+# 	print(url)
 
-for sub in subs:
-	print(sub["name"] + ":")
-	for submission in sub["submissions"]:
-		print("\t" + submission.short_link)
-	print()
+for i in range(0,len(urls)):
+	f = None
+	try:
+		f = open(str(i) + ".png", "wb")
+		f.write(urlopen(urls[i]).read())
+		f.close()
+		print(str(i) + ".png downloaded!")
+	except:
+		f.close()
+		print(str(i) + ".png failed!")
 
-
+print("done.")
