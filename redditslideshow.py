@@ -7,7 +7,6 @@ def getSubmissions(sub, number, list):
 	urls = []
 	for sub in subs:
 		sub["submissions"] = []
-
 		if list == "hot":
 			for submission in sub["sub"].get_hot(limit=args.number):
 				sub["submissions"].append(submission)
